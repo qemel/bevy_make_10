@@ -1,5 +1,6 @@
 use super::components::*;
 use crate::game::GameNumbers;
+use crate::game::state::{GameState, GameProgress};
 use bevy::prelude::*;
 
 type ButtonQuery<'w, 's> = Query<
@@ -35,19 +36,63 @@ pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
             GameScreenContainer,
         ))
         .with_children(|parent| {
-            // Title
-            parent.spawn((
-                Text::new("Make 10 Game"),
-                TextFont {
-                    font_size: 48.0,
-                    ..default()
-                },
-                TextColor(Color::WHITE),
-                Node {
-                    margin: UiRect::bottom(Val::Px(30.0)),
-                    ..default()
-                },
-            ));
+            // Title and game info
+            parent
+                .spawn((
+                    Node {
+                        flex_direction: FlexDirection::Column,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        margin: UiRect::bottom(Val::Px(30.0)),
+                        row_gap: Val::Px(10.0),
+                        ..default()
+                    },
+                ))
+                .with_children(|title_parent| {
+                    // Title
+                    title_parent.spawn((
+                        Text::new("Make 10 Game"),
+                        TextFont {
+                            font_size: 48.0,
+                            ..default()
+                        },
+                        TextColor(Color::WHITE),
+                    ));
+                    
+                    // Stage and Score info
+                    title_parent
+                        .spawn((
+                            Node {
+                                flex_direction: FlexDirection::Row,
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::Center,
+                                column_gap: Val::Px(40.0),
+                                ..default()
+                            },
+                        ))
+                        .with_children(|info_parent| {
+                            // Stage display
+                            info_parent.spawn((
+                                Text::new("Stage: 1"),
+                                TextFont {
+                                    font_size: 20.0,
+                                    ..default()
+                                },
+                                TextColor(Color::srgb(0.8, 0.8, 0.8)),
+                                ScoreDisplay, // 便宜上ScoreDisplayコンポーネントを使用
+                            ));
+                            
+                            // Score display
+                            info_parent.spawn((
+                                Text::new("Score: 0"),
+                                TextFont {
+                                    font_size: 20.0,
+                                    ..default()
+                                },
+                                TextColor(Color::srgb(0.8, 0.8, 0.8)),
+                            ));
+                        });
+                });
 
             // Numbers display area
             parent
@@ -359,5 +404,190 @@ fn evaluate_simple_expression(expression: &str) -> Option<f64> {
         }
     } else {
         None
+    }
+}
+
+// ステージクリア検出システム
+pub fn stage_clear_detection_system(
+    calc_state: Res<CalculationState>,
+    mut game_state: ResMut<GameState>,
+    mut game_progress: ResMut<GameProgress>,
+    mut commands: Commands,
+    popup_query: Query<Entity, With<StageClearPopup>>,
+) {
+    // 計算結果が10の場合、ステージクリア
+    if let Some(result) = calc_state.result {
+        if (result - 10.0).abs() < f64::EPSILON && *game_state == GameState::Playing {
+            *game_state = GameState::StageClear;
+            game_progress.stages_cleared += 1;
+            game_progress.score += 100; // ステージクリアごとに100ポイント
+            
+            // ポップアップが存在しない場合のみ作成
+            if popup_query.is_empty() {
+                spawn_stage_clear_popup(&mut commands, &game_progress);
+            }
+            
+            println!("Stage Clear! Result: {}", result);
+        }
+    }
+}
+
+// ポップアップシステム
+pub fn popup_system(
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor, Option<&NextStageButton>),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut game_state: ResMut<GameState>,
+    mut game_progress: ResMut<GameProgress>,
+    mut calc_state: ResMut<CalculationState>,
+    mut game_numbers: ResMut<GameNumbers>,
+    mut commands: Commands,
+    popup_query: Query<Entity, With<StageClearPopup>>,
+    overlay_query: Query<Entity, With<PopupOverlay>>,
+) {
+    for (interaction, mut color, next_button) in &mut interaction_query {
+        if let Interaction::Pressed = *interaction {
+            if next_button.is_some() && *game_state == GameState::StageClear {
+                // 次のステージに進む
+                game_progress.current_stage += 1;
+                *game_state = GameState::Playing;
+                
+                // 計算状態をリセット
+                calc_state.expression.clear();
+                calc_state.result = None;
+                calc_state.selected_numbers.clear();
+                calc_state.operators.clear();
+                
+                // 新しい数字を生成
+                *game_numbers = GameNumbers::new();
+                
+                // ポップアップを削除
+                for entity in popup_query.iter() {
+                    commands.entity(entity).despawn();
+                }
+                for entity in overlay_query.iter() {
+                    commands.entity(entity).despawn();
+                }
+                
+                println!("Starting Stage {}", game_progress.current_stage);
+                
+                *color = Color::srgb(0.8, 0.8, 0.8).into();
+            }
+        }
+    }
+}
+
+// ステージクリアポップアップを生成
+fn spawn_stage_clear_popup(commands: &mut Commands, game_progress: &GameProgress) {
+    // オーバーレイ（背景）
+    commands
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                top: Val::Px(0.0),
+                left: Val::Px(0.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.7)),
+            PopupOverlay,
+        ))
+        .with_children(|overlay| {
+            // ポップアップ本体
+            overlay
+                .spawn((
+                    Node {
+                        width: Val::Px(400.0),
+                        height: Val::Px(250.0),
+                        flex_direction: FlexDirection::Column,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        row_gap: Val::Px(20.0),
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgb(0.2, 0.3, 0.4)),
+                    StageClearPopup,
+                ))
+                .with_children(|popup| {
+                    // タイトル
+                    popup.spawn((
+                        Text::new("Stage Clear!"),
+                        TextFont {
+                            font_size: 36.0,
+                            ..default()
+                        },
+                        TextColor(Color::srgb(0.2, 0.8, 0.2)),
+                    ));
+                    
+                    // ステージ情報
+                    popup.spawn((
+                        Text::new(format!("Stage {} Completed", game_progress.current_stage)),
+                        TextFont {
+                            font_size: 20.0,
+                            ..default()
+                        },
+                        TextColor(Color::WHITE),
+                    ));
+                    
+                    // スコア情報
+                    popup.spawn((
+                        Text::new(format!("Score: {}", game_progress.score)),
+                        TextFont {
+                            font_size: 18.0,
+                            ..default()
+                        },
+                        TextColor(Color::WHITE),
+                    ));
+                    
+                    // 次へボタン
+                    popup
+                        .spawn((
+                            Button,
+                            Node {
+                                width: Val::Px(150.0),
+                                height: Val::Px(50.0),
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::Center,
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgb(0.2, 0.6, 0.2)),
+                            NextStageButton,
+                        ))
+                        .with_children(|button| {
+                            button.spawn((
+                                Text::new("Next Stage"),
+                                TextFont {
+                                    font_size: 20.0,
+                                    ..default()
+                                },
+                                TextColor(Color::WHITE),
+                            ));
+                        });
+                });
+        });
+}
+
+// ゲーム情報表示システム（ステージとスコア表示の更新）
+pub fn game_info_display_system(
+    game_progress: Res<GameProgress>,
+    mut score_query: Query<&mut Text, With<ScoreDisplay>>,
+    mut text_query: Query<&mut Text, Without<ScoreDisplay>>,
+) {
+    if game_progress.is_changed() {
+        // スコア表示の更新（ScoreDisplayコンポーネント付き）
+        if let Ok(mut score_text) = score_query.single_mut() {
+            **score_text = format!("Stage: {}", game_progress.current_stage);
+        }
+        
+        // 他のテキスト表示から"Score:"で始まるものを見つけて更新
+        for mut text in text_query.iter_mut() {
+            if text.0.starts_with("Score:") {
+                **text = format!("Score: {}", game_progress.score);
+            }
+        }
     }
 }

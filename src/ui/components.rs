@@ -43,3 +43,13 @@ pub struct CalculationState {
     pub selected_numbers: Vec<usize>, // 選択された数字のインデックス
     pub operators: Vec<char>,         // 使用された演算子
 }
+
+// ステージクリアポップアップ関連のコンポーネント
+#[derive(Component)]
+pub struct StageClearPopup;
+
+#[derive(Component)]
+pub struct NextStageButton;
+
+#[derive(Component)]
+pub struct PopupOverlay;
