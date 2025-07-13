@@ -16,7 +16,9 @@
       "Bash(ls:*)",
       "Bash(mv:*)",
       "Bash(grep:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(cargo test)",
+      "Bash(cargo run:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
