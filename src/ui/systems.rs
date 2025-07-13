@@ -1,6 +1,6 @@
-use bevy::prelude::*;
-use crate::game::GameNumbers;
 use super::components::*;
+use crate::game::GameNumbers;
+use bevy::prelude::*;
 
 // UI初期化システム
 pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
@@ -38,16 +38,14 @@ pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
 
             // Numbers display area
             parent
-                .spawn((
-                    Node {
-                        flex_direction: FlexDirection::Row,
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        margin: UiRect::bottom(Val::Px(20.0)),
-                        column_gap: Val::Px(20.0),
-                        ..default()
-                    },
-                ))
+                .spawn((Node {
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    margin: UiRect::bottom(Val::Px(20.0)),
+                    column_gap: Val::Px(20.0),
+                    ..default()
+                },))
                 .with_children(|numbers_parent| {
                     // ゲームの数字を表示
                     for i in 0..4 {
@@ -63,7 +61,10 @@ pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
                                     ..default()
                                 },
                                 BackgroundColor(Color::srgb(0.3, 0.5, 0.7)),
-                                NumberDisplay { value: digit_value as u32, index: i },
+                                NumberDisplay {
+                                    value: digit_value as u32,
+                                    index: i,
+                                },
                             ))
                             .with_children(|button_parent| {
                                 button_parent.spawn((
@@ -80,16 +81,14 @@ pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
 
             // 演算ボタンエリア
             parent
-                .spawn((
-                    Node {
-                        flex_direction: FlexDirection::Row,
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        margin: UiRect::bottom(Val::Px(20.0)),
-                        column_gap: Val::Px(15.0),
-                        ..default()
-                    },
-                ))
+                .spawn((Node {
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    margin: UiRect::bottom(Val::Px(20.0)),
+                    column_gap: Val::Px(15.0),
+                    ..default()
+                },))
                 .with_children(|operators_parent| {
                     let operators = ['+', '-', '*', '/'];
                     for &op in &operators {
@@ -121,16 +120,14 @@ pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
 
             // 計算式と結果表示エリア
             parent
-                .spawn((
-                    Node {
-                        flex_direction: FlexDirection::Column,
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        margin: UiRect::bottom(Val::Px(20.0)),
-                        row_gap: Val::Px(10.0),
-                        ..default()
-                    },
-                ))
+                .spawn((Node {
+                    flex_direction: FlexDirection::Column,
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    margin: UiRect::bottom(Val::Px(20.0)),
+                    row_gap: Val::Px(10.0),
+                    ..default()
+                },))
                 .with_children(|calc_parent| {
                     // 計算式表示
                     calc_parent.spawn((
@@ -185,19 +182,27 @@ pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
 // ボタンのインタラクションシステム
 pub fn button_system(
     mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, Option<&NumberDisplay>, Option<&OperatorButton>, Option<&ResetButton>),
+        (
+            &Interaction,
+            &mut BackgroundColor,
+            Option<&NumberDisplay>,
+            Option<&OperatorButton>,
+            Option<&ResetButton>,
+        ),
         (Changed<Interaction>, With<Button>),
     >,
     mut calc_state: ResMut<CalculationState>,
     game_numbers: Res<GameNumbers>,
 ) {
-    for (interaction, mut color, number_display, operator_button, reset_button) in &mut interaction_query {
+    for (interaction, mut color, number_display, operator_button, reset_button) in
+        &mut interaction_query
+    {
         match *interaction {
             Interaction::Pressed => {
                 if let Some(number) = number_display {
                     // 数字ボタンが押された時の処理
                     let digit_value = game_numbers.digits[number.index];
-                    
+
                     // 新しい数字を式に追加
                     if calc_state.expression.is_empty() {
                         calc_state.expression = digit_value.to_string();
@@ -206,27 +211,34 @@ pub fn button_system(
                         if let Some(last_char) = calc_state.expression.chars().last() {
                             if "+-*/".contains(last_char) {
                                 calc_state.expression.push_str(&format!(" {}", digit_value));
-                                
+
                                 // 簡単な計算を実行（2項演算のみ）
-                                if let Some(result) = evaluate_simple_expression(&calc_state.expression) {
+                                if let Some(result) =
+                                    evaluate_simple_expression(&calc_state.expression)
+                                {
                                     calc_state.result = Some(result);
                                 }
                             }
                         }
                     }
-                    
-                    println!("Number button pressed: {} (index: {})", number.value, number.index);
+
+                    println!(
+                        "Number button pressed: {} (index: {})",
+                        number.value, number.index
+                    );
                 } else if let Some(operator) = operator_button {
                     // 演算子ボタンが押された時の処理
                     if !calc_state.expression.is_empty() {
                         // 最後の文字が数字の場合のみ演算子を追加
                         if let Some(last_char) = calc_state.expression.chars().last() {
                             if last_char.is_ascii_digit() {
-                                calc_state.expression.push_str(&format!(" {} ", operator.operator));
+                                calc_state
+                                    .expression
+                                    .push_str(&format!(" {} ", operator.operator));
                             }
                         }
                     }
-                    
+
                     println!("Operator button pressed: {}", operator.operator);
                 } else if reset_button.is_some() {
                     // リセットボタンが押された時の処理
@@ -234,10 +246,10 @@ pub fn button_system(
                     calc_state.result = None;
                     calc_state.selected_numbers.clear();
                     calc_state.operators.clear();
-                    
+
                     println!("Reset button pressed");
                 }
-                
+
                 // 押下時の色変更
                 *color = Color::srgb(0.8, 0.8, 0.8).into();
             }
@@ -276,7 +288,7 @@ pub fn number_display_system(
         for (number_display, children) in number_query.iter_mut() {
             // 対応する桁の値を取得
             let value = game_numbers.digits[number_display.index];
-            
+
             // 子要素のテキストを更新
             for child in children.iter() {
                 if let Ok(mut text) = text_query.get_mut(child) {
@@ -321,13 +333,13 @@ pub fn calculation_display_system(
 // 簡単な計算式評価関数（2項演算のみ）
 fn evaluate_simple_expression(expression: &str) -> Option<f64> {
     let parts: Vec<&str> = expression.split_whitespace().collect();
-    
+
     // 最低でも3つの部分（数字 演算子 数字）が必要
     if parts.len() >= 3 {
         let left = parts[0].parse::<f64>().ok()?;
         let operator = parts[1];
         let right = parts[2].parse::<f64>().ok()?;
-        
+
         match operator {
             "+" => Some(left + right),
             "-" => Some(left - right),

@@ -9,13 +9,15 @@ pub struct UIPlugin;
 
 impl Plugin for UIPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .init_resource::<CalculationState>()
+        app.init_resource::<CalculationState>()
             .add_systems(Startup, systems::setup_ui)
-            .add_systems(Update, (
-                systems::button_system,
-                systems::number_display_system,
-                systems::calculation_display_system,
-            ));
+            .add_systems(
+                Update,
+                (
+                    systems::button_system,
+                    systems::number_display_system,
+                    systems::calculation_display_system,
+                ),
+            );
     }
 }

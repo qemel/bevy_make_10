@@ -2,7 +2,7 @@ mod game;
 mod ui;
 
 use bevy::prelude::*;
-use game::{GameNumbers};
+use game::GameNumbers;
 use ui::UIPlugin;
 
 fn main() {
