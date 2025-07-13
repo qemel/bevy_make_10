@@ -1,7 +1,9 @@
 //! 数字生成とランダム4桁の管理
 
+use bevy::prelude::*;
+
 /// 4つのランダム数字を表す構造体
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Resource)]
 pub struct GameNumbers {
     pub digits: [u8; 4],
 }
