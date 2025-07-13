@@ -1,20 +1,15 @@
 //! ゲーム状態管理
 
 /// ゲームの状態を表すenum
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub enum GameState {
     /// ゲーム中
+    #[default]
     Playing,
     /// ステージクリア
     StageClear,
     /// ゲームオーバー
     GameOver,
-}
-
-impl Default for GameState {
-    fn default() -> Self {
-        GameState::Playing
-    }
 }
 
 #[cfg(test)]
