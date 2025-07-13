@@ -19,6 +19,10 @@ pub struct OperatorButton {
 #[derive(Component)]
 pub struct ExpressionDisplay;
 
+// 計算結果表示用のコンポーネント
+#[derive(Component)]
+pub struct ResultDisplay;
+
 // リセットボタン用のコンポーネント
 #[derive(Component)]  
 pub struct ResetButton;
@@ -30,3 +34,12 @@ pub struct ScoreDisplay;
 // ゲーム画面のメインコンテナ
 #[derive(Component)]
 pub struct GameScreenContainer;
+
+// 計算状態を管理するリソース
+#[derive(Resource, Default)]
+pub struct CalculationState {
+    pub expression: String,
+    pub result: Option<f64>,
+    pub selected_numbers: Vec<usize>, // 選択された数字のインデックス
+    pub operators: Vec<char>,         // 使用された演算子
+}

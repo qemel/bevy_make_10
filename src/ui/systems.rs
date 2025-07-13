@@ -119,20 +119,41 @@ pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
                     }
                 });
 
-            // 計算式表示エリア
-            parent.spawn((
-                Text::new("Calculation: "),
-                TextFont {
-                    font_size: 24.0,
-                    ..default()
-                },
-                TextColor(Color::WHITE),
-                Node {
-                    margin: UiRect::bottom(Val::Px(20.0)),
-                    ..default()
-                },
-                ExpressionDisplay,
-            ));
+            // 計算式と結果表示エリア
+            parent
+                .spawn((
+                    Node {
+                        flex_direction: FlexDirection::Column,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        margin: UiRect::bottom(Val::Px(20.0)),
+                        row_gap: Val::Px(10.0),
+                        ..default()
+                    },
+                ))
+                .with_children(|calc_parent| {
+                    // 計算式表示
+                    calc_parent.spawn((
+                        Text::new("Expression: "),
+                        TextFont {
+                            font_size: 20.0,
+                            ..default()
+                        },
+                        TextColor(Color::srgb(0.9, 0.9, 0.9)),
+                        ExpressionDisplay,
+                    ));
+
+                    // 計算結果表示
+                    calc_parent.spawn((
+                        Text::new("Result: "),
+                        TextFont {
+                            font_size: 24.0,
+                            ..default()
+                        },
+                        TextColor(Color::srgb(0.2, 0.8, 0.2)),
+                        ResultDisplay,
+                    ));
+                });
 
             // リセットボタン
             parent
@@ -167,16 +188,54 @@ pub fn button_system(
         (&Interaction, &mut BackgroundColor, Option<&NumberDisplay>, Option<&OperatorButton>, Option<&ResetButton>),
         (Changed<Interaction>, With<Button>),
     >,
+    mut calc_state: ResMut<CalculationState>,
+    game_numbers: Res<GameNumbers>,
 ) {
     for (interaction, mut color, number_display, operator_button, reset_button) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
                 if let Some(number) = number_display {
-                    println!("数字ボタンが押されました: {} (index: {})", number.value, number.index);
+                    // 数字ボタンが押された時の処理
+                    let digit_value = game_numbers.digits[number.index];
+                    
+                    // 新しい数字を式に追加
+                    if calc_state.expression.is_empty() {
+                        calc_state.expression = digit_value.to_string();
+                    } else {
+                        // 最後の文字が演算子の場合のみ数字を追加
+                        if let Some(last_char) = calc_state.expression.chars().last() {
+                            if "+-*/".contains(last_char) {
+                                calc_state.expression.push_str(&format!(" {}", digit_value));
+                                
+                                // 簡単な計算を実行（2項演算のみ）
+                                if let Some(result) = evaluate_simple_expression(&calc_state.expression) {
+                                    calc_state.result = Some(result);
+                                }
+                            }
+                        }
+                    }
+                    
+                    println!("Number button pressed: {} (index: {})", number.value, number.index);
                 } else if let Some(operator) = operator_button {
-                    println!("演算ボタンが押されました: {}", operator.operator);
+                    // 演算子ボタンが押された時の処理
+                    if !calc_state.expression.is_empty() {
+                        // 最後の文字が数字の場合のみ演算子を追加
+                        if let Some(last_char) = calc_state.expression.chars().last() {
+                            if last_char.is_ascii_digit() {
+                                calc_state.expression.push_str(&format!(" {} ", operator.operator));
+                            }
+                        }
+                    }
+                    
+                    println!("Operator button pressed: {}", operator.operator);
                 } else if reset_button.is_some() {
-                    println!("リセットボタンが押されました");
+                    // リセットボタンが押された時の処理
+                    calc_state.expression.clear();
+                    calc_state.result = None;
+                    calc_state.selected_numbers.clear();
+                    calc_state.operators.clear();
+                    
+                    println!("Reset button pressed");
                 }
                 
                 // 押下時の色変更
@@ -225,5 +284,64 @@ pub fn number_display_system(
                 }
             }
         }
+    }
+}
+
+// 計算表示システム - 計算式と結果の更新
+pub fn calculation_display_system(
+    calc_state: Res<CalculationState>,
+    mut expr_query: Query<&mut Text, (With<ExpressionDisplay>, Without<ResultDisplay>)>,
+    mut result_query: Query<&mut Text, (With<ResultDisplay>, Without<ExpressionDisplay>)>,
+) {
+    // CalculationStateが変更された場合のみ更新
+    if calc_state.is_changed() {
+        // 計算式表示の更新
+        if let Ok(mut expr_text) = expr_query.single_mut() {
+            if calc_state.expression.is_empty() {
+                **expr_text = "Expression: ".to_string();
+            } else {
+                **expr_text = format!("Expression: {}", calc_state.expression);
+            }
+        }
+
+        // 計算結果表示の更新
+        if let Ok(mut result_text) = result_query.single_mut() {
+            match calc_state.result {
+                Some(result) => {
+                    **result_text = format!("Result: {}", result);
+                }
+                None => {
+                    **result_text = "Result: ".to_string();
+                }
+            }
+        }
+    }
+}
+
+// 簡単な計算式評価関数（2項演算のみ）
+fn evaluate_simple_expression(expression: &str) -> Option<f64> {
+    let parts: Vec<&str> = expression.split_whitespace().collect();
+    
+    // 最低でも3つの部分（数字 演算子 数字）が必要
+    if parts.len() >= 3 {
+        let left = parts[0].parse::<f64>().ok()?;
+        let operator = parts[1];
+        let right = parts[2].parse::<f64>().ok()?;
+        
+        match operator {
+            "+" => Some(left + right),
+            "-" => Some(left - right),
+            "*" => Some(left * right),
+            "/" => {
+                if right != 0.0 {
+                    Some(left / right)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    } else {
+        None
     }
 }
