@@ -2,6 +2,20 @@ use super::components::*;
 use crate::game::GameNumbers;
 use bevy::prelude::*;
 
+// 複雑な型定義をエイリアスで簡略化
+type ButtonQuery<'w, 's> = Query<
+    'w,
+    's,
+    (
+        &'static Interaction,
+        &'static mut BackgroundColor,
+        Option<&'static NumberDisplay>,
+        Option<&'static OperatorButton>,
+        Option<&'static ResetButton>,
+    ),
+    (Changed<Interaction>, With<Button>),
+>;
+
 // UI初期化システム
 pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
     // カメラの作成
@@ -181,16 +195,7 @@ pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
 
 // ボタンのインタラクションシステム
 pub fn button_system(
-    mut interaction_query: Query<
-        (
-            &Interaction,
-            &mut BackgroundColor,
-            Option<&NumberDisplay>,
-            Option<&OperatorButton>,
-            Option<&ResetButton>,
-        ),
-        (Changed<Interaction>, With<Button>),
-    >,
+    mut interaction_query: ButtonQuery,
     mut calc_state: ResMut<CalculationState>,
     game_numbers: Res<GameNumbers>,
 ) {
