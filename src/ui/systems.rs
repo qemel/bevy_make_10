@@ -2,7 +2,6 @@ use super::components::*;
 use crate::game::GameNumbers;
 use bevy::prelude::*;
 
-// 複雑な型定義をエイリアスで簡略化
 type ButtonQuery<'w, 's> = Query<
     'w,
     's,
