@@ -22,7 +22,7 @@ pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
             GameScreenContainer,
         ))
         .with_children(|parent| {
-            // タイトル
+            // Title
             parent.spawn((
                 Text::new("Make 10 Game"),
                 TextFont {
@@ -36,7 +36,7 @@ pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
                 },
             ));
 
-            // 数字表示エリア
+            // Numbers display area
             parent
                 .spawn((
                     Node {
@@ -121,7 +121,7 @@ pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
 
             // 計算式表示エリア
             parent.spawn((
-                Text::new("計算式: "),
+                Text::new("Calculation: "),
                 TextFont {
                     font_size: 24.0,
                     ..default()
@@ -150,7 +150,7 @@ pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
                 ))
                 .with_children(|button_parent| {
                     button_parent.spawn((
-                        Text::new("リセット"),
+                        Text::new("Reset"),
                         TextFont {
                             font_size: 16.0,
                             ..default()
