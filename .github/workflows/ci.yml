@@ -10,10 +10,67 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # Run cargo test
+  # 新しく追加：PR時の自動修正
+  auto_fix:
+    name: Auto Fix
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 30
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-fix-${{ hashFiles('**/Cargo.toml') }}
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Install Dependencies
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+      - name: Check if fixes are needed
+        id: check
+        run: |
+          # フォーマットチェック
+          if ! cargo fmt --all -- --check; then
+            echo "format_needed=true" >> $GITHUB_OUTPUT
+          fi
+          # Clippyチェック
+          if ! cargo clippy -- -D warnings; then
+            echo "clippy_needed=true" >> $GITHUB_OUTPUT
+          fi
+      - name: Apply fixes
+        if: steps.check.outputs.format_needed == 'true' || steps.check.outputs.clippy_needed == 'true'
+        run: |
+          cargo fmt --all
+          cargo clippy --fix --allow-dirty --allow-staged
+      - name: Commit and push fixes
+        if: steps.check.outputs.format_needed == 'true' || steps.check.outputs.clippy_needed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          if ! git diff --staged --quiet; then
+            git commit -m "🤖 Auto-fix formatting and clippy issues"
+            git push
+          fi
+
+  # 既存のジョブ（auto_fixが完了してから実行）
   test:
     name: Test Suite
     runs-on: ubuntu-latest
+    needs: [auto_fix]
+    if: always() && (needs.auto_fix.result == 'success' || needs.auto_fix.result == 'skipped')
     timeout-minutes: 30
     steps:
       - name: Checkout sources
@@ -35,10 +92,11 @@ jobs:
       - name: Run cargo test
         run: cargo test
 
-  # Run cargo clippy -- -D warnings
   clippy_check:
     name: Clippy
     runs-on: ubuntu-latest
+    needs: [auto_fix]
+    if: always() && (needs.auto_fix.result == 'success' || needs.auto_fix.result == 'skipped')
     timeout-minutes: 30
     steps:
       - name: Checkout sources
@@ -62,10 +120,11 @@ jobs:
       - name: Run clippy
         run: cargo clippy -- -D warnings
 
-  # Run cargo fmt --all -- --check
   format:
     name: Format
     runs-on: ubuntu-latest
+    needs: [auto_fix]
+    if: always() && (needs.auto_fix.result == 'success' || needs.auto_fix.result == 'skipped')
     timeout-minutes: 30
     steps:
       - name: Checkout sources
