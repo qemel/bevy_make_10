@@ -255,7 +255,7 @@ pub fn button_system(
                         // 最後の文字が演算子の場合のみ数字を追加
                         if let Some(last_char) = calc_state.expression.chars().last() {
                             if "+-*/".contains(last_char) {
-                                calc_state.expression.push_str(&format!("{}", digit_value));
+                                calc_state.expression.push_str(&format!(" {}", digit_value));
 
                                 // 計算を実行（4項演算まで対応）
                                 if let Some(result) = evaluate_expression(&calc_state.expression) {
@@ -279,7 +279,7 @@ pub fn button_system(
                         // 最後の文字が数字の場合のみ演算子を追加
                         if let Some(last_char) = calc_state.expression.chars().last() {
                             if last_char.is_ascii_digit() {
-                                calc_state.expression.push_str(&format!("{}", operator.operator));
+                                calc_state.expression.push_str(&format!(" {}", operator.operator));
                             }
                         } else{
                             println!("Cannot add operator without a preceding number.");
@@ -383,11 +383,13 @@ pub fn evaluate_expression(expression: &str) -> Option<f64> {
 
     // 最低3つの部分が必要（数字 演算子 数字）
     if parts.len() < 3 {
+        println!("Invalid expression: length is less than 3, {}", parts.len());
         return None;
     }
 
     // 奇数個の部分が必要（数字で始まり数字で終わる）
     if parts.len() % 2 == 0 {
+        println!("Invalid expression: length is even, {}", parts.len());
         return None;
     }
 
@@ -398,11 +400,13 @@ pub fn evaluate_expression(expression: &str) -> Option<f64> {
             let num = part.parse::<f64>().ok()?;
             // 1桁の数字のみ許可（1-9）
             if num < 1.0 || num > 9.0 || num.fract() != 0.0 {
+                println!("Invalid number: {}", part);
                 return None;
             }
         } else {
             // 演算子の位置
             if !matches!(*part, "+" | "-" | "*" | "/") {
+                println!("Invalid operator: {}", part);
                 return None;
             }
         }
@@ -433,6 +437,7 @@ pub fn evaluate_expression(expression: &str) -> Option<f64> {
             }
             "/" => {
                 if numbers[i + 1] == 0.0 {
+                    println!("Division by zero in expression: {}", expression);
                     return None;
                 }
                 let result = numbers[i] / numbers[i + 1];
