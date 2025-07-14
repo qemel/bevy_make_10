@@ -20,7 +20,11 @@ type ButtonQuery<'w, 's> = Query<
 type PopupInteractionQuery<'w, 's> = Query<
     'w,
     's,
-    (&'static Interaction, &'static mut BackgroundColor, Option<&'static NextStageButton>),
+    (
+        &'static Interaction,
+        &'static mut BackgroundColor,
+        Option<&'static NextStageButton>,
+    ),
     (Changed<Interaction>, With<Button>),
 >;
 
