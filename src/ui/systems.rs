@@ -16,6 +16,14 @@ type ButtonQuery<'w, 's> = Query<
     (Changed<Interaction>, With<Button>),
 >;
 
+// ポップアップシステム用のクエリ型を定義
+type PopupInteractionQuery<'w, 's> = Query<
+    'w,
+    's,
+    (&'static Interaction, &'static mut BackgroundColor, Option<&'static NextStageButton>),
+    (Changed<Interaction>, With<Button>),
+>;
+
 // UI初期化システム
 pub fn setup_ui(mut commands: Commands, game_numbers: Res<GameNumbers>) {
     // カメラの作成
@@ -401,7 +409,7 @@ pub fn evaluate_expression(expression: &str) -> Option<f64> {
             // 数字の位置
             let num = part.parse::<f64>().ok()?;
             // 1桁の数字のみ許可（1-9）
-            if num < 1.0 || num > 9.0 || num.fract() != 0.0 {
+            if !(1.0..=9.0).contains(&num) || num.fract() != 0.0 {
                 println!("Invalid number: {}", part);
                 return None;
             }
@@ -492,11 +500,9 @@ pub fn stage_clear_detection_system(
 }
 
 // ポップアップシステム
+#[allow(clippy::too_many_arguments)]
 pub fn popup_system(
-    mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, Option<&NextStageButton>),
-        (Changed<Interaction>, With<Button>),
-    >,
+    mut interaction_query: PopupInteractionQuery,
     mut game_state: ResMut<GameState>,
     mut game_progress: ResMut<GameProgress>,
     mut calc_state: ResMut<CalculationState>,

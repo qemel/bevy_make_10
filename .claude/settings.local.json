@@ -20,7 +20,8 @@
       "Bash(cargo test)",
       "Bash(cargo run:*)",
       "Bash(cargo build:*)",
-      "Bash(cargo test:*)"
+      "Bash(cargo test:*)",
+      "Bash(cargo clippy:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
