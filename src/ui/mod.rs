@@ -1,5 +1,7 @@
 pub mod components;
 pub mod systems;
+#[cfg(test)]
+mod expression_tests;
 
 use bevy::prelude::*;
 use components::CalculationState;

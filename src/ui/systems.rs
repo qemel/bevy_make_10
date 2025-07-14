@@ -377,39 +377,83 @@ pub fn calculation_display_system(
     }
 }
 
-// 計算式評価関数（4項演算まで対応）
-fn evaluate_expression(expression: &str) -> Option<f64> {
+// 計算式評価関数（4項演算まで対応、演算子優先度考慮）
+pub fn evaluate_expression(expression: &str) -> Option<f64> {
     let parts: Vec<&str> = expression.split_whitespace().collect();
 
-    // 3つ以上の部分が必要（最低: 数字 演算子 数字）
+    // 最低3つの部分が必要（数字 演算子 数字）
     if parts.len() < 3 {
         return None;
     }
 
-    // 左から右へ順次計算
-    let mut result = parts[0].parse::<f64>().ok()?;
+    // 奇数個の部分が必要（数字で始まり数字で終わる）
+    if parts.len() % 2 == 0 {
+        return None;
+    }
 
-    // 演算子と数字のペアを処理
-    let mut i = 1;
-    while i + 1 < parts.len() {
-        let operator = parts[i];
-        let operand = parts[i + 1].parse::<f64>().ok()?;
+    // Make10ゲーム用の入力検証
+    for (i, part) in parts.iter().enumerate() {
+        if i % 2 == 0 {
+            // 数字の位置
+            let num = part.parse::<f64>().ok()?;
+            // 1桁の数字のみ許可（1-9）
+            if num < 1.0 || num > 9.0 || num.fract() != 0.0 {
+                return None;
+            }
+        } else {
+            // 演算子の位置
+            if !matches!(*part, "+" | "-" | "*" | "/") {
+                return None;
+            }
+        }
+    }
 
-        match operator {
-            "+" => result += operand,
-            "-" => result -= operand,
-            "*" => result *= operand,
+    // 数字と演算子のベクターに分割
+    let mut numbers = Vec::new();
+    let mut operators = Vec::new();
+
+    for (i, part) in parts.iter().enumerate() {
+        if i % 2 == 0 {
+            numbers.push(part.parse::<f64>().ok()?);
+        } else {
+            operators.push(*part);
+        }
+    }
+
+    // 演算子優先度を考慮した計算
+    // 最初に掛け算と割り算を処理
+    let mut i = 0;
+    while i < operators.len() {
+        match operators[i] {
+            "*" => {
+                let result = numbers[i] * numbers[i + 1];
+                numbers[i] = result;
+                numbers.remove(i + 1);
+                operators.remove(i);
+            }
             "/" => {
-                if operand != 0.0 {
-                    result /= operand;
-                } else {
+                if numbers[i + 1] == 0.0 {
                     return None;
                 }
+                let result = numbers[i] / numbers[i + 1];
+                numbers[i] = result;
+                numbers.remove(i + 1);
+                operators.remove(i);
             }
-            _ => return None,
+            _ => {
+                i += 1;
+            }
         }
+    }
 
-        i += 2;
+    // 次に足し算と引き算を左から右へ処理
+    let mut result = numbers[0];
+    for (i, &operator) in operators.iter().enumerate() {
+        match operator {
+            "+" => result += numbers[i + 1],
+            "-" => result -= numbers[i + 1],
+            _ => return None, // この時点で*と/は既に処理済みなのでエラー
+        }
     }
 
     Some(result)
