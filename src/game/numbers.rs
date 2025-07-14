@@ -9,17 +9,25 @@ pub struct GameNumbers {
 }
 
 impl GameNumbers {
-    /// 新しいランダムな4桁を生成
+    /// 新しいランダムな4桁を生成（必ず解ける組み合わせ）
     pub fn new() -> Self {
         use std::time::{SystemTime, UNIX_EPOCH};
+        use crate::game::Calculator;
 
-        // 簡単な疑似乱数生成（テスト用）
-        let seed = SystemTime::now()
+        // 解ける組み合わせが見つかるまで生成を続ける
+        let mut seed = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos() as u64;
 
-        Self::from_seed(seed)
+        loop {
+            let candidate = Self::from_seed_with_valid_range(seed);
+            if Calculator::can_make_ten(&candidate) {
+                return candidate;
+            }
+            // 次のシードを試す
+            seed = seed.wrapping_add(1);
+        }
     }
 
     /// シード値から決定的に4桁を生成（テスト用）
@@ -30,6 +38,20 @@ impl GameNumbers {
             // 線形合同法による疑似乱数
             seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
             digits[i] = ((seed / 65536) % 10) as u8;
+        }
+
+        Self { digits }
+    }
+
+    /// シード値から有効範囲（1-9）の4桁を生成
+    fn from_seed_with_valid_range(mut seed: u64) -> Self {
+        let mut digits = [0u8; 4];
+
+        for i in 0..4 {
+            // 線形合同法による疑似乱数
+            seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
+            // 1-9の範囲で生成（0は除外）
+            digits[i] = ((seed / 65536) % 9) as u8 + 1;
         }
 
         Self { digits }
