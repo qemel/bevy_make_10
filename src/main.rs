@@ -2,6 +2,7 @@ mod game;
 mod ui;
 
 use bevy::prelude::*;
+use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 use game::GameNumbers;
 use ui::UIPlugin;
 
@@ -16,6 +17,8 @@ fn main() {
             ..default()
         }))
         .add_plugins(UIPlugin)
+        .add_plugins(EguiPlugin::default())
+        .add_plugins(WorldInspectorPlugin::new())
         .insert_resource(GameNumbers::new()) // ゲーム用のリソースとして数字を追加
         .run();
 }

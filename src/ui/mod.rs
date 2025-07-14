@@ -10,7 +10,9 @@ pub struct UIPlugin;
 
 impl Plugin for UIPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<CalculationState>()
+        app
+            .register_type::<CalculationState>()
+            .init_resource::<CalculationState>()
             .init_resource::<GameState>()
             .init_resource::<GameProgress>()
             .add_systems(Startup, systems::setup_ui)

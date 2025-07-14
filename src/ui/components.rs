@@ -36,7 +36,8 @@ pub struct ScoreDisplay;
 pub struct GameScreenContainer;
 
 // 計算状態を管理するリソース
-#[derive(Resource, Default)]
+#[derive(Resource, Reflect, Default)]
+#[reflect(Resource)]
 pub struct CalculationState {
     pub expression: String,
     pub result: Option<f64>,
