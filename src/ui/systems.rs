@@ -279,9 +279,11 @@ pub fn button_system(
                         // 最後の文字が数字の場合のみ演算子を追加
                         if let Some(last_char) = calc_state.expression.chars().last() {
                             if last_char.is_ascii_digit() {
-                                calc_state.expression.push_str(&format!(" {}", operator.operator));
+                                calc_state
+                                    .expression
+                                    .push_str(&format!(" {}", operator.operator));
                             }
-                        } else{
+                        } else {
                             println!("Cannot add operator without a preceding number.");
                         }
                     }

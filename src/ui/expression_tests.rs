@@ -31,19 +31,19 @@ mod tests {
     #[test]
     fn test_operator_precedence_multiply_first() {
         assert_eq!(evaluate_expression("2 + 3 * 4"), Some(14.0)); // 2 + (3 * 4) = 2 + 12 = 14
-        assert_eq!(evaluate_expression("1 + 2 * 3"), Some(7.0));   // 1 + (2 * 3) = 1 + 6 = 7
+        assert_eq!(evaluate_expression("1 + 2 * 3"), Some(7.0)); // 1 + (2 * 3) = 1 + 6 = 7
     }
 
     #[test]
     fn test_operator_precedence_divide_first() {
         assert_eq!(evaluate_expression("8 + 6 / 2"), Some(11.0)); // 8 + (6 / 2) = 8 + 3 = 11
-        assert_eq!(evaluate_expression("1 + 8 / 4"), Some(3.0));  // 1 + (8 / 4) = 1 + 2 = 3
+        assert_eq!(evaluate_expression("1 + 8 / 4"), Some(3.0)); // 1 + (8 / 4) = 1 + 2 = 3
     }
 
     #[test]
     fn test_operator_precedence_mixed() {
         assert_eq!(evaluate_expression("2 + 3 * 4 - 1"), Some(13.0)); // 2 + (3 * 4) - 1 = 2 + 12 - 1 = 13
-        assert_eq!(evaluate_expression("9 - 6 / 2 + 1"), Some(7.0));  // 9 - (6 / 2) + 1 = 9 - 3 + 1 = 7
+        assert_eq!(evaluate_expression("9 - 6 / 2 + 1"), Some(7.0)); // 9 - (6 / 2) + 1 = 9 - 3 + 1 = 7
     }
 
     // 4項演算のテスト
@@ -91,9 +91,9 @@ mod tests {
 
     #[test]
     fn test_invalid_operators() {
-        assert_eq!(evaluate_expression("1 & 2"), None);  // 無効な演算子
-        assert_eq!(evaluate_expression("1 ^ 2"), None);  // 無効な演算子
-        assert_eq!(evaluate_expression("1 % 2"), None);  // 無効な演算子
+        assert_eq!(evaluate_expression("1 & 2"), None); // 無効な演算子
+        assert_eq!(evaluate_expression("1 ^ 2"), None); // 無効な演算子
+        assert_eq!(evaluate_expression("1 % 2"), None); // 無効な演算子
     }
 
     #[test]
@@ -111,8 +111,8 @@ mod tests {
 
     #[test]
     fn test_invalid_alphabetic_input() {
-        assert_eq!(evaluate_expression("a + b"), None);   // 文字は無効
-        assert_eq!(evaluate_expression("1 + x"), None);   // 文字は無効
+        assert_eq!(evaluate_expression("a + b"), None); // 文字は無効
+        assert_eq!(evaluate_expression("1 + x"), None); // 文字は無効
     }
 
     // Make 10 の典型的なケースのテスト

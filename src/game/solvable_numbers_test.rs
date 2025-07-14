@@ -1,13 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use crate::game::{GameNumbers, Calculator};
+    use crate::game::{Calculator, GameNumbers};
 
     #[test]
     fn test_all_generated_numbers_are_solvable() {
         // 複数回生成して、すべてが解けることを確認
         for i in 0..100 {
             let numbers = GameNumbers::new();
-            
+
             assert!(
                 Calculator::can_make_ten(&numbers),
                 "生成された数字 {:?} (試行 {}) で10を作ることができません",
@@ -23,7 +23,7 @@ mod tests {
         for seed in [12345, 67890, 99999, 11111, 55555] {
             let numbers1 = GameNumbers::from_seed(seed);
             let numbers2 = GameNumbers::from_seed(seed);
-            
+
             assert_eq!(
                 numbers1.digits, numbers2.digits,
                 "シード {} から生成された数字が一貫していません",
@@ -37,7 +37,7 @@ mod tests {
         // 生成された数字が1-9の範囲内であることを確認（Make10ゲーム用）
         for _ in 0..50 {
             let numbers = GameNumbers::new();
-            
+
             for &digit in &numbers.digits {
                 assert!(
                     digit >= 1 && digit <= 9,

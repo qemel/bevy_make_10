@@ -11,8 +11,8 @@ pub struct GameNumbers {
 impl GameNumbers {
     /// 新しいランダムな4桁を生成（必ず解ける組み合わせ）
     pub fn new() -> Self {
-        use std::time::{SystemTime, UNIX_EPOCH};
         use crate::game::Calculator;
+        use std::time::{SystemTime, UNIX_EPOCH};
 
         // 解ける組み合わせが見つかるまで生成を続ける
         let mut seed = SystemTime::now()

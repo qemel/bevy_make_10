@@ -1,19 +1,18 @@
 pub mod components;
-pub mod systems;
 #[cfg(test)]
 mod expression_tests;
+pub mod systems;
 
+use crate::game::state::{GameProgress, GameState};
 use bevy::prelude::*;
 use components::CalculationState;
-use crate::game::state::{GameState, GameProgress};
 
 // UIプラグイン
 pub struct UIPlugin;
 
 impl Plugin for UIPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .register_type::<CalculationState>()
+        app.register_type::<CalculationState>()
             .init_resource::<CalculationState>()
             .init_resource::<GameState>()
             .init_resource::<GameProgress>()
