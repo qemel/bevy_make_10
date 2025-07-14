@@ -261,9 +261,9 @@ pub fn button_system(
                             if "+-*/".contains(last_char) {
                                 calc_state.expression.push_str(&format!(" {}", digit_value));
 
-                                // 簡単な計算を実行（2項演算のみ）
+                                // 計算を実行（4項演算まで対応）
                                 if let Some(result) =
-                                    evaluate_simple_expression(&calc_state.expression)
+                                    evaluate_expression(&calc_state.expression)
                                 {
                                     calc_state.result = Some(result);
                                 }
@@ -379,32 +379,42 @@ pub fn calculation_display_system(
     }
 }
 
-// 簡単な計算式評価関数（2項演算のみ）
-fn evaluate_simple_expression(expression: &str) -> Option<f64> {
+// 計算式評価関数（4項演算まで対応）
+fn evaluate_expression(expression: &str) -> Option<f64> {
     let parts: Vec<&str> = expression.split_whitespace().collect();
-
-    // 最低でも3つの部分（数字 演算子 数字）が必要
-    if parts.len() >= 3 {
-        let left = parts[0].parse::<f64>().ok()?;
-        let operator = parts[1];
-        let right = parts[2].parse::<f64>().ok()?;
-
+    
+    // 3つ以上の部分が必要（最低: 数字 演算子 数字）
+    if parts.len() < 3 {
+        return None;
+    }
+    
+    // 左から右へ順次計算
+    let mut result = parts[0].parse::<f64>().ok()?;
+    
+    // 演算子と数字のペアを処理
+    let mut i = 1;
+    while i + 1 < parts.len() {
+        let operator = parts[i];
+        let operand = parts[i + 1].parse::<f64>().ok()?;
+        
         match operator {
-            "+" => Some(left + right),
-            "-" => Some(left - right),
-            "*" => Some(left * right),
+            "+" => result += operand,
+            "-" => result -= operand,
+            "*" => result *= operand,
             "/" => {
-                if right != 0.0 {
-                    Some(left / right)
+                if operand != 0.0 {
+                    result /= operand;
                 } else {
-                    None
+                    return None;
                 }
             }
-            _ => None,
+            _ => return None,
         }
-    } else {
-        None
+        
+        i += 2;
     }
+    
+    Some(result)
 }
 
 // ステージクリア検出システム
