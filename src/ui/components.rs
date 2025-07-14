@@ -36,10 +36,21 @@ pub struct ScoreDisplay;
 pub struct GameScreenContainer;
 
 // 計算状態を管理するリソース
-#[derive(Resource, Default)]
+#[derive(Resource, Reflect, Default)]
+#[reflect(Resource)]
 pub struct CalculationState {
     pub expression: String,
     pub result: Option<f64>,
     pub selected_numbers: Vec<usize>, // 選択された数字のインデックス
     pub operators: Vec<char>,         // 使用された演算子
 }
+
+// ステージクリアポップアップ関連のコンポーネント
+#[derive(Component)]
+pub struct StageClearPopup;
+
+#[derive(Component)]
+pub struct NextStageButton;
+
+#[derive(Component)]
+pub struct PopupOverlay;
